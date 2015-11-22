@@ -1,14 +1,15 @@
 ﻿using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("JobSpawn.Master")]
+[assembly: AssemblyTitle("JobSpawn.IntegrationTests.LocalSpawn")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("JobSpawn.Master")]
+[assembly: AssemblyProduct("JobSpawn.IntegrationTests.LocalSpawn")]
 [assembly: AssemblyCopyright("Copyright ©  2015")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -19,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("6382e94b-2cf1-48ad-9c2d-f922754d3027")]
+[assembly: Guid("9d6370a0-47ad-41f5-b5ac-6b7836de67e4")]
 
 // Version information for an assembly consists of the following four values:
 //

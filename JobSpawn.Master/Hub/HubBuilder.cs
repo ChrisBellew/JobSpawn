@@ -1,4 +1,4 @@
-﻿namespace JobSpawn.Master.Hub
+﻿namespace JobSpawn.Hub
 {
     class HubBuilder
     {

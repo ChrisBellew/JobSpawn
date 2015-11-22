@@ -7,7 +7,7 @@
     <ProjectGuid>{6382E94B-2CF1-48AD-9C2D-F922754D3027}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>JobSpawn.Master</RootNamespace>
+    <RootNamespace>JobSpawn</RootNamespace>
     <AssemblyName>JobSpawn.Master</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -30,6 +30,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Newtonsoft.Json, Version=7.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.7.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -41,18 +45,35 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Controller\ISpawnController.cs" />
+    <Compile Include="Controller\SpawnController.cs" />
+    <Compile Include="Host\Host.cs" />
+    <Compile Include="Host\HostBuilder.cs" />
+    <Compile Include="Host\IHost.cs" />
+    <Compile Include="Host\IHostBuilder.cs" />
     <Compile Include="Hub\HubBuilder.cs" />
+    <Compile Include="Message\IMessageTypeBuilder.cs" />
+    <Compile Include="Message\IMessageTypeDefinitionBuilder.cs" />
+    <Compile Include="Message\MessageTypeBuilder.cs" />
+    <Compile Include="Message\MessageTypeDefinition.cs" />
+    <Compile Include="Message\MessageTypeDefinitionBuilder.cs" />
     <Compile Include="Package\Package.cs" />
     <Compile Include="Package\PackageBuilder.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Proxy\IProxyBuilder.cs" />
     <Compile Include="Proxy\ProxyBuilder.cs" />
     <Compile Include="Serializers\IMessageSerializer.cs" />
-    <Compile Include="SpawnController.cs" />
+    <Compile Include="Serializers\JsonSerializer.cs" />
+    <Compile Include="Spawn.cs" />
     <Compile Include="Spawner.cs" />
     <Compile Include="Hub\Hub.cs" />
     <Compile Include="Hub\SpawnTopology.cs" />
-    <Compile Include="TestProxy.cs" />
+    <Compile Include="TestMessage.cs" />
+    <Compile Include="Utility\DependencyInjector.cs" />
     <Compile Include="Utility\EnumerableExtensions.cs" />
+    <Compile Include="Utility\TypeBuilderHelper.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

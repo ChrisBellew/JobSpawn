@@ -1,4 +1,4 @@
-﻿namespace JobSpawn.Master.Package
+﻿namespace JobSpawn.Package
 {
     public class Package
     {

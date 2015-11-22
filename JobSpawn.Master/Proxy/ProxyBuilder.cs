@@ -2,22 +2,26 @@
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Threading;
-using JobSpawn.Master.Controller;
-using JobSpawn.Master.Serializers;
-using JobSpawn.Master.Utility;
+using JobSpawn.Controller;
+using JobSpawn.Message;
+using JobSpawn.Serializers;
+using JobSpawn.Utility;
 
-namespace JobSpawn.Master.Proxy
+namespace JobSpawn.Proxy
 {
-    public class ProxyBuilder
+    public class ProxyBuilder : IProxyBuilder
     {
         private readonly IMessageSerializer serializer;
         private readonly ISpawnController spawnController;
+        private readonly IMessageTypeBuilder messageTypeBuilder;
+        private readonly IMessageTypeDefinitionBuilder messageTypeDefinitionBuilder;
 
-        public ProxyBuilder(IMessageSerializer serializer, ISpawnController spawnController)
+        public ProxyBuilder(IMessageSerializer serializer, ISpawnController spawnController, IMessageTypeBuilder messageTypeBuilder, IMessageTypeDefinitionBuilder messageTypeDefinitionBuilder)
         {
             this.serializer = serializer;
             this.spawnController = spawnController;
+            this.messageTypeBuilder = messageTypeBuilder;
+            this.messageTypeDefinitionBuilder = messageTypeDefinitionBuilder;
         }
 
         public TContract BuildProxy<TContract>()
@@ -25,53 +29,54 @@ namespace JobSpawn.Master.Proxy
             var contractType = typeof(TContract);
 
             // Build the concrete implementation of the contract to act as the proxy for messages
-            AssemblyName assemblyName = new AssemblyName();
-            assemblyName.Name = "JobSpawnProxyAssembly";
-            AssemblyBuilder assemblyBuilder = Thread.GetDomain().DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndSave);
-            ModuleBuilder module = assemblyBuilder.DefineDynamicModule("JobSpawnProxyModule", "testmodule.dll");
-            TypeBuilder typeBuilder = module.DefineType("JobSpawnProxy", TypeAttributes.Public | TypeAttributes.Class);
-            //TypeBuilder typeBuilder = CreateTypeBuilder();
+            AssemblyBuilder assemblyBuilder = TypeBuilderHelper.CreateAssemblyBuilder("JobSpawnProxy");
+            TypeBuilder typeBuilder = TypeBuilderHelper.CreateTypeBuilder(assemblyBuilder, "JobSpawnProxy");
 
             FieldBuilder spawnControllerField = typeBuilder.DefineField("spawnController", typeof(ISpawnController), FieldAttributes.Private);
             FieldBuilder serializerField = typeBuilder.DefineField("serializer", typeof(IMessageSerializer), FieldAttributes.Private);
 
             BuildConstructor(typeBuilder, spawnControllerField, serializerField);
             typeBuilder.AddInterfaceImplementation(contractType);
-            contractType.GetMethods().ToList().ForEach(methodInfo => BuildConcreteMethod(typeBuilder, methodInfo, spawnControllerField, serializerField));
+            contractType.GetMethods().ForEach(methodInfo => BuildConcreteMethod(typeBuilder, methodInfo, spawnControllerField, serializerField));
 
             // Create an instance of the proxy
             var proxyType = typeBuilder.CreateType();
-
-            assemblyBuilder.Save("assembly.dll");
-
-
+            assemblyBuilder.Save("JobSpawnProxyAssembly.dll");
             return (TContract)Activator.CreateInstance(proxyType, spawnController, serializer);
         }
-
-        /*private TypeBuilder CreateTypeBuilder()
-        {
-            AssemblyName assemblyName = new AssemblyName();
-            assemblyName.Name = "JobSpawnProxyAssembly";
-            AssemblyBuilder assemblyBuilder = Thread.GetDomain().DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndSave);
-            ModuleBuilder module = assemblyBuilder.DefineDynamicModule("JobSpawnProxyModule", "testmodule.dll");
-            return module.DefineType("JobSpawnProxy", TypeAttributes.Public | TypeAttributes.Class);
-        }*/
 
         private void BuildConstructor(TypeBuilder typeBuilder, FieldBuilder spawnControllerField, FieldBuilder serializerField)
         {
             var constructorBuilder = typeBuilder.DefineConstructor(MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, CallingConventions.Standard, new [] { typeof(ISpawnController), typeof(IMessageSerializer) });
 
             var ilGenerator = constructorBuilder.GetILGenerator();
+
+            // Load 'this' onto the stack
             ilGenerator.Emit(OpCodes.Ldarg_0);
 
+            // Call the constructor on System.object
             var baseCtor = typeof(object).GetConstructor(BindingFlags.Public | BindingFlags.Instance, null, new Type[] { }, null);
             ilGenerator.Emit(OpCodes.Call, baseCtor);
+            
+            // Load 'this' onto the stack
             ilGenerator.Emit(OpCodes.Ldarg_0);
+
+            // Load the spawn controller onto the stack
             ilGenerator.Emit(OpCodes.Ldarg_1);
+
+            // Save the spawn controller into the instance field
             ilGenerator.Emit(OpCodes.Stfld, spawnControllerField);
+
+            // Load 'this' onto the stack
             ilGenerator.Emit(OpCodes.Ldarg_0);
+
+            // Load the serializer onto the stack
             ilGenerator.Emit(OpCodes.Ldarg_2);
+
+            // Save the serializer into the instance field
             ilGenerator.Emit(OpCodes.Stfld, serializerField);
+
+            // Return nothing
             ilGenerator.Emit(OpCodes.Ret);
         }
 
@@ -81,66 +86,74 @@ namespace JobSpawn.Master.Proxy
             var method = typeBuilder.DefineMethod(methodInfo.Name, MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.HideBySig | MethodAttributes.NewSlot | MethodAttributes.Final, methodInfo.ReturnType, parameters);
             typeBuilder.DefineMethodOverride(method, methodInfo);
 
+            var messageTypeDefinition = messageTypeDefinitionBuilder.BuildMessageTypeDefinition(methodInfo);
+            var messageType = messageTypeBuilder.BuildMessageType(messageTypeDefinition);
+
             var ilGenerator = method.GetILGenerator();
 
-            // Create a local variable to store the object array which will catch all the incoming arguments
-            ilGenerator.DeclareLocal(typeof(object[]));
+            ilGenerator.DeclareLocal(messageType);
             ilGenerator.DeclareLocal(typeof(byte[]));
-
-            // Build the object array
-            ilGenerator.Emit(OpCodes.Ldc_I4, parameters.Length);
-            ilGenerator.Emit(OpCodes.Newarr, typeof(object));
+            ilGenerator.DeclareLocal(typeof(MessageTypeDefinition));
+            ilGenerator.DeclareLocal(messageType);
+            ilGenerator.DeclareLocal(typeof(MessageTypeDefinition));
+            ilGenerator.DeclareLocal(typeof(MessageArgument));
             
-            // Add the incoming arguments into the object array
-            parameters.ForEach((parameter, index) => LoadArgumentIntoObjectArray(ilGenerator, parameter, index));
+            ilGenerator.Emit(OpCodes.Newobj, messageType.GetConstructors()[0]);
+            ilGenerator.Emit(OpCodes.Stloc_3);
 
-            // Pass the object array onto the spawn controller
-            //ilGenerator.Emit(OpCodes.Call, typeof(ProxyBuilder).GetMethod("MessageCreated"));
+            var index = 0;
+            foreach (var argument in messageTypeDefinition.Arguments)
+            {
+                ilGenerator.Emit(OpCodes.Ldloc_3);
+                ilGenerator.Emit(OpCodes.Ldarg, index + 1);
+                ilGenerator.Emit(OpCodes.Stfld, messageType.GetField(argument.Name));
+                index++;
+            }
             
-            // Store the object array as local variable 1
+            ilGenerator.Emit(OpCodes.Ldloc_3);
             ilGenerator.Emit(OpCodes.Stloc_0);
-
-            // Load 'this' onto the stack
             ilGenerator.Emit(OpCodes.Ldarg_0);
-
-            // Get the serializer for this instance and puts it on the stack
             ilGenerator.Emit(OpCodes.Ldfld, serializerField);
-
-            // Put the object array on the stack
             ilGenerator.Emit(OpCodes.Ldloc_0);
             ilGenerator.Emit(OpCodes.Callvirt, serializer.GetType().GetMethod("SerialiseMessage"));
             ilGenerator.Emit(OpCodes.Stloc_1);
+            ilGenerator.Emit(OpCodes.Newobj, typeof(MessageTypeDefinition).GetConstructors()[0]);
+            ilGenerator.Emit(OpCodes.Stloc_S, 4);
+            ilGenerator.Emit(OpCodes.Ldloc_S, 4);
+            ilGenerator.Emit(OpCodes.Ldc_I4, messageTypeDefinition.Arguments.Length);
+            ilGenerator.Emit(OpCodes.Newarr, typeof(MessageArgument));
+
+
+            index = 0;
+            foreach (var argument in messageTypeDefinition.Arguments)
+            {
+                ilGenerator.Emit(OpCodes.Dup);
+                ilGenerator.Emit(OpCodes.Ldc_I4, index);
+                ilGenerator.Emit(OpCodes.Newobj, typeof(MessageArgument).GetConstructors()[0]);
+                ilGenerator.Emit(OpCodes.Stloc_S, 5);
+                ilGenerator.Emit(OpCodes.Ldloc_S, 5);
+                ilGenerator.Emit(OpCodes.Ldstr, argument.Name);
+                ilGenerator.Emit(OpCodes.Stfld, typeof(MessageArgument).GetField("Name"));
+                ilGenerator.Emit(OpCodes.Ldloc_S, 5);
+                ilGenerator.Emit(OpCodes.Ldtoken, Type.GetType(argument.Type));
+                ilGenerator.Emit(OpCodes.Call, typeof(Type).GetMethod("GetTypeFromHandle", new[] { typeof(RuntimeTypeHandle) }));
+                ilGenerator.Emit(OpCodes.Callvirt, typeof(Type).GetMethod("get_FullName"));
+                ilGenerator.Emit(OpCodes.Stfld, typeof(MessageArgument).GetField("Type"));
+                ilGenerator.Emit(OpCodes.Ldloc_S, 5);
+                ilGenerator.Emit(OpCodes.Stelem_Ref);
+                index++;
+            }
+
+            ilGenerator.Emit(OpCodes.Stfld, typeof(MessageTypeDefinition).GetField("Arguments"));
+            ilGenerator.Emit(OpCodes.Ldloc_S, 4);
+            ilGenerator.Emit(OpCodes.Stloc_2);
             ilGenerator.Emit(OpCodes.Ldarg_0);
             ilGenerator.Emit(OpCodes.Ldfld, spawnControllerField);
+            ilGenerator.Emit(OpCodes.Ldstr, methodInfo.Name);
+            ilGenerator.Emit(OpCodes.Ldloc_2);
             ilGenerator.Emit(OpCodes.Ldloc_1);
             ilGenerator.Emit(OpCodes.Callvirt, spawnController.GetType().GetMethod("StartRequest"));
             ilGenerator.Emit(OpCodes.Ret);
         }
-
-        private void LoadArgumentIntoObjectArray(ILGenerator ilGenerator, Type parameter, int index)
-        {
-            // Create a duplicate of the object array on the stack, the Stelem_Ref opcode will need this below
-            ilGenerator.Emit(OpCodes.Dup);
-
-            // Set up the index for the argument to be placed into the object array
-            ilGenerator.Emit(OpCodes.Ldc_I4, index);
-
-            // Load the argument onto the stack
-            ilGenerator.Emit(OpCodes.Ldarg, index + 1);
-            if (parameter.IsValueType)
-            {
-                // Value types must be boxed before they can go into the object array
-                ilGenerator.Emit(OpCodes.Box, parameter.UnderlyingSystemType);
-            }
-
-            // Place the argument into the object array at the index given earlier
-            ilGenerator.Emit(OpCodes.Stelem_Ref);
-        }
-
-        /*public void MessageCreated(object[] message)
-        {
-            var messageBytes = serializer.SerialiseMessage(message);
-            spawnController.StartRequest(messageBytes);
-        }*/
     }
 }
