@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Threading.Tasks;
 using JobSpawn.Controller;
 using JobSpawn.Message;
 using JobSpawn.Serializers;
@@ -97,7 +98,11 @@ namespace JobSpawn.Proxy
             ilGenerator.DeclareLocal(messageType);
             ilGenerator.DeclareLocal(typeof(MessageTypeDefinition));
             ilGenerator.DeclareLocal(typeof(MessageArgument));
-            
+            if (methodInfo.ReturnType != typeof (void))
+            {
+                ilGenerator.DeclareLocal(methodInfo.ReturnType);
+            }
+
             ilGenerator.Emit(OpCodes.Newobj, messageType.GetConstructors()[0]);
             ilGenerator.Emit(OpCodes.Stloc_3);
 
@@ -153,6 +158,20 @@ namespace JobSpawn.Proxy
             ilGenerator.Emit(OpCodes.Ldloc_2);
             ilGenerator.Emit(OpCodes.Ldloc_1);
             ilGenerator.Emit(OpCodes.Callvirt, spawnController.GetType().GetMethod("StartRequest"));
+            if (methodInfo.ReturnType != typeof (void))
+            {
+                ilGenerator.Emit(OpCodes.Callvirt, typeof (Task<object>).GetMethod("get_Result"));
+                if (methodInfo.ReturnType.IsValueType)
+                {
+                    ilGenerator.Emit(OpCodes.Unbox_Any, methodInfo.ReturnType);
+                }
+                ilGenerator.Emit(OpCodes.Stloc_S, 6);
+                ilGenerator.Emit(OpCodes.Ldloc_S, 6);
+            }
+            else
+            {
+                ilGenerator.Emit(OpCodes.Pop);
+            }
             ilGenerator.Emit(OpCodes.Ret);
         }
     }

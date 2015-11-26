@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using System.Threading.Tasks;
 using JobSpawn.Controller;
 using JobSpawn.Message;
 using JobSpawn.Serializers;
@@ -9,14 +10,35 @@ namespace JobSpawn.UnitTests.ProxyBuilder
     [TestClass]
     public class ProxyBuilderTests
     {
+
+        [TestMethod]
+        public void TestReturnValue()
+        {
+            MockSpawnController spawnController = new MockSpawnController();
+            Proxy.ProxyBuilder proxyBuilder = new Proxy.ProxyBuilder(new JsonSerializer(), spawnController, new MessageTypeBuilder(), new MessageTypeDefinitionBuilder());
+            var proxy = proxyBuilder.BuildProxy<IMockType>();
+            var result = proxy.DoSomethingInt(1);
+
+            Assert.AreEqual(3, result);
+        }
+
+        [TestMethod]
+        public void TestNoReturnValue()
+        {
+            MockSpawnController spawnController = new MockSpawnController();
+            Proxy.ProxyBuilder proxyBuilder = new Proxy.ProxyBuilder(new JsonSerializer(), spawnController, new MessageTypeBuilder(), new MessageTypeDefinitionBuilder());
+            var proxy = proxyBuilder.BuildProxy<IMockType>();
+            proxy.DoSomethingVoid(1);
+        }
+
         [TestMethod]
         public void TestSimpleProxy()
         {
             MockSpawnController spawnController = new MockSpawnController();
             Proxy.ProxyBuilder proxyBuilder = new Proxy.ProxyBuilder(new JsonSerializer(), spawnController, new MessageTypeBuilder(), new MessageTypeDefinitionBuilder());
             var proxy = proxyBuilder.BuildProxy<IMockType>();
-            proxy.DoSomething(1, 2, "a string", new MockObject { AString = "another string", ANumber = 3 });
-
+            proxy.DoSomethingPrimitiveAndObjectParameters(1, 2, "a string", new MockObject { AString = "another string", ANumber = 3 });
+            
             Assert.AreEqual(4, spawnController.messageTypeDefinition.Arguments.Length);
             Assert.AreEqual(typeof(int).FullName, spawnController.messageTypeDefinition.Arguments[0].Type);
             Assert.AreEqual(typeof(int).FullName, spawnController.messageTypeDefinition.Arguments[1].Type);
@@ -30,17 +52,20 @@ namespace JobSpawn.UnitTests.ProxyBuilder
             public string action;
             public MessageTypeDefinition messageTypeDefinition;
             public byte[] messageBytes;
-            public void StartRequest(string action, MessageTypeDefinition messageTypeDefinition, byte[] messageBytes)
+            public Task<object> StartRequest(string action, MessageTypeDefinition messageTypeDefinition, byte[] messageBytes)
             {
                 this.action = action;
                 this.messageTypeDefinition = messageTypeDefinition;
                 this.messageBytes = messageBytes;
+                return Task.FromResult((object)3);
             }
         }
 
         public interface IMockType
         {
-            void DoSomething(int one, int two, string three, MockObject mockObject);
+            int DoSomethingInt(int one);
+            void DoSomethingVoid(int one);
+            void DoSomethingPrimitiveAndObjectParameters(int one, int two, string three, MockObject mockObject);
         }
 
         public class MockObject

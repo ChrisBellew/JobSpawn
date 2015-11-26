@@ -30,9 +30,15 @@ namespace JobSpawn.IntegrationTests.LocalSpawn
             mockType.LogData("one", 2);
             Assert.AreEqual("one", DatumOne);
             Assert.AreEqual(2, DatumTwo);
+
+            /*var mockType2 = Spawner.CreateSpawn<MockType2>().As<IMockType2>();
+            var result = mockType2.LogData("one", 2);
+            Assert.AreEqual("one", DatumOne);
+            Assert.AreEqual(2, DatumTwo);
+            Assert.AreEqual(3, result);*/
         }
 
-        public class MockType
+        public class MockType : IMockType
         {
             public void LogData(string datumOne, int datumTwo)
             {
@@ -44,6 +50,21 @@ namespace JobSpawn.IntegrationTests.LocalSpawn
         public interface IMockType
         {
             void LogData(string datumOne, int datumTwo);
+        }
+
+        public class MockType2 : IMockType2
+        {
+            public int LogData(string datumOne, int datumTwo)
+            {
+                DatumOne = datumOne;
+                DatumTwo = datumTwo;
+                return 3;
+            }
+        }
+
+        public interface IMockType2
+        {
+            int LogData(string datumOne, int datumTwo);
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using JobSpawn.Host;
 using JobSpawn.Message;
 
@@ -13,9 +14,10 @@ namespace JobSpawn.Controller
             host = hostBuilder.BuildHost(concreteType);
         }
 
-        public void StartRequest(string action, MessageTypeDefinition messageTypeDefinition, byte[] messageBytes)
+        public Task<object> StartRequest(string action, MessageTypeDefinition messageTypeDefinition, byte[] messageBytes)
         {
-            host.RunMessage(action, messageTypeDefinition, messageBytes);
+            var result = host.RunMessage(action, messageTypeDefinition, messageBytes);
+            return Task.FromResult(result);
         }
     }
 }

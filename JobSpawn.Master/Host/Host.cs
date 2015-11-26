@@ -20,11 +20,11 @@ namespace JobSpawn.Host
             instanceType = instance.GetType();
         }
 
-        public void RunMessage(string action, MessageTypeDefinition messageTypeDefinition, byte[] messageBytes)
+        public object RunMessage(string action, MessageTypeDefinition messageTypeDefinition, byte[] messageBytes)
         {
             var message = serializer.DeserialiseMessage(messageBytes, messageTypeBuilder.BuildMessageType(messageTypeDefinition));
             var arguments = messageTypeDefinition.Arguments.Select(x => message.GetType().GetField(x.Name).GetValue(message)).ToArray();
-            instanceType.GetMethod(action).Invoke(instance, arguments);
+            return instanceType.GetMethod(action).Invoke(instance, arguments);
         }
     }
 }

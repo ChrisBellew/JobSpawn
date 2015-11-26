@@ -4,6 +4,6 @@ namespace JobSpawn.Host
 {
     public interface IHost
     {
-        void RunMessage(string action, MessageTypeDefinition messageTypeDefinition, byte[] messageBytes);
+        object RunMessage(string action, MessageTypeDefinition messageTypeDefinition, byte[] messageBytes);
     }
 }
