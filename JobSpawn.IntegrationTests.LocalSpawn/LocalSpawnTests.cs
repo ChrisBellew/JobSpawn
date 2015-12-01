@@ -22,7 +22,7 @@ namespace JobSpawn.IntegrationTests.LocalSpawn
         {
             DependencyInjector.AddType<IProxyBuilder, ProxyBuilder>();
             DependencyInjector.AddType<ISpawnController, SpawnController>();
-            DependencyInjector.AddType<IHostBuilder, HostBuilder>();
+            //DependencyInjector.AddType<IHostBuilder, HostBuilder>();
             DependencyInjector.AddType<IProxyBuilder, ProxyBuilder>();
             DependencyInjector.AddType<IMessageSerializer, JsonSerializer>();
             DependencyInjector.AddType<IMessageTypeDefinitionBuilder, MessageTypeDefinitionBuilder>();
@@ -35,11 +35,11 @@ namespace JobSpawn.IntegrationTests.LocalSpawn
 
             var mockType2 = Spawner.CreateSpawn<MockType2>().As<IMockType2>();
 
-            Parallel.ForEach(Enumerable.Range(0, 1000), new ParallelOptions {MaxDegreeOfParallelism = 1}, state =>
-            {
+            /*Parallel.ForEach(Enumerable.Range(0, 100), new ParallelOptions {MaxDegreeOfParallelism = 10}, state =>
+            {*/
                 var result = mockType2.LogData("one", 2);
                 Assert.AreEqual(42, result);
-            });
+            //});
 
             var result2 = mockType2.LogData("one", 2);
             //Assert.AreEqual("one", DatumOne);

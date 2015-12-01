@@ -115,13 +115,13 @@ namespace JobSpawn.Proxy
                 index++;
             }
             
-            ilGenerator.Emit(OpCodes.Ldloc_3);
+            /*ilGenerator.Emit(OpCodes.Ldloc_3);
             ilGenerator.Emit(OpCodes.Stloc_0);
             ilGenerator.Emit(OpCodes.Ldarg_0);
             ilGenerator.Emit(OpCodes.Ldfld, serializerField);
             ilGenerator.Emit(OpCodes.Ldloc_0);
-            ilGenerator.Emit(OpCodes.Callvirt, serializer.GetType().GetMethod("SerialiseMessage"));
-            ilGenerator.Emit(OpCodes.Stloc_1);
+            ilGenerator.Emit(OpCodes.Callvirt, serializer.GetType().GetMethod("SerialiseMessage"));*/
+            //ilGenerator.Emit(OpCodes.Stloc_1);
             ilGenerator.Emit(OpCodes.Newobj, typeof(MessageTypeDefinition).GetConstructors()[0]);
             ilGenerator.Emit(OpCodes.Stloc_S, 4);
             ilGenerator.Emit(OpCodes.Ldloc_S, 4);
@@ -156,7 +156,8 @@ namespace JobSpawn.Proxy
             ilGenerator.Emit(OpCodes.Ldfld, spawnControllerField);
             ilGenerator.Emit(OpCodes.Ldstr, methodInfo.Name);
             ilGenerator.Emit(OpCodes.Ldloc_2);
-            ilGenerator.Emit(OpCodes.Ldloc_1);
+            //ilGenerator.Emit(OpCodes.Ldloc_1);
+            ilGenerator.Emit(OpCodes.Ldloc_3);
             ilGenerator.Emit(OpCodes.Callvirt, spawnController.GetType().GetMethod("StartRequest"));
             if (methodInfo.ReturnType != typeof (void))
             {

@@ -8,7 +8,9 @@ namespace JobSpawn.RemoteHost.Controllers
     {
         public MessageResult Post(Message.Message message)
         {
-            return new MessageResult { Result = 42 };
+            var result = Startup.Host.RunMessage(message.Action, message.MessageTypeDefinition, message.Arguments);
+            Console.WriteLine("Ran action '{0}' for result '{1}'", message.Action, result);
+            return new MessageResult { Result = result };
         }
     }
 }

@@ -8,7 +8,7 @@ namespace JobSpawn
     public class TestMessageProxy : ITestMessageProxy
     {
         private IMessageSerializer messageSerializer = new JsonSerializer();
-        private ISpawnController spawnController = new SpawnController(new HostBuilder(new JsonSerializer(), new MessageTypeBuilder()), typeof(TestMessageProxy));
+        private ISpawnController spawnController = new SpawnController(typeof(TestMessageProxy));
 
         public int DoSomething(int one, string two)
         {

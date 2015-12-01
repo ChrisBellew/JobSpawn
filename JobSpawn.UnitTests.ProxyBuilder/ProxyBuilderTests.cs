@@ -44,19 +44,19 @@ namespace JobSpawn.UnitTests.ProxyBuilder
             Assert.AreEqual(typeof(int).FullName, spawnController.messageTypeDefinition.Arguments[1].Type);
             Assert.AreEqual(typeof(string).FullName, spawnController.messageTypeDefinition.Arguments[2].Type);
             Assert.AreEqual(typeof(MockObject).FullName, spawnController.messageTypeDefinition.Arguments[3].Type);
-            Assert.AreEqual("{\"one\":1,\"two\":2,\"three\":\"a string\",\"mockObject\":{\"AString\":\"another string\",\"ANumber\":3}}", Encoding.UTF8.GetString(spawnController.messageBytes));
+            //Assert.AreEqual("{\"one\":1,\"two\":2,\"three\":\"a string\",\"mockObject\":{\"AString\":\"another string\",\"ANumber\":3}}", Encoding.UTF8.GetString(spawnController.arguments));
         }
 
         public class MockSpawnController : ISpawnController
         {
             public string action;
             public MessageTypeDefinition messageTypeDefinition;
-            public byte[] messageBytes;
-            public Task<object> StartRequest(string action, MessageTypeDefinition messageTypeDefinition, byte[] messageBytes)
+            public object arguments;
+            public Task<object> StartRequest(string action, MessageTypeDefinition messageTypeDefinition, object arguments)
             {
                 this.action = action;
                 this.messageTypeDefinition = messageTypeDefinition;
-                this.messageBytes = messageBytes;
+                this.arguments = arguments;
                 return Task.FromResult((object)3);
             }
         }

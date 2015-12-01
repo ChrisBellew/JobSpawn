@@ -4,6 +4,6 @@
     {
         public string Action;
         public MessageTypeDefinition MessageTypeDefinition;
-        public byte[] MessageBytes;
+        public object Arguments;
     }
 }

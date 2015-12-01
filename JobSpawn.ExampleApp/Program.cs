@@ -18,7 +18,7 @@ namespace JobSpawn.ExampleApp
         {
             DependencyInjector.AddType<IProxyBuilder, ProxyBuilder>();
             DependencyInjector.AddType<ISpawnController, SpawnController>();
-            DependencyInjector.AddType<IHostBuilder, HostBuilder>();
+            //DependencyInjector.AddType<IHostBuilder, HostBuilder>();
             DependencyInjector.AddType<IProxyBuilder, ProxyBuilder>();
             DependencyInjector.AddType<IMessageSerializer, JsonSerializer>();
             DependencyInjector.AddType<IMessageTypeDefinitionBuilder, MessageTypeDefinitionBuilder>();

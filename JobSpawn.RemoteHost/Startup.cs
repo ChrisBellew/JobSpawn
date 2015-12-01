@@ -5,6 +5,8 @@ namespace JobSpawn.RemoteHost
 {
     public class Startup
     {
+        public static Host.Host Host;
+
         // This method is required by Katana:
         public void Configuration(IAppBuilder app)
         {
